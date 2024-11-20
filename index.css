@@ -1,10 +1,41 @@
 body {
-    margin: 20px;
+    margin: 0px;
+    color: white;
+    background-color: #1E1E1E;
+    font-family: sans-serif;
+}
+
+.header {
+    height: 60px;
+    background-color: #252526;
+    line-height: 60px;
+    font-size: 30px;
+    padding-left: 20px;
+}
+
+#tooltip {
+    position: absolute;
+    width: 100px;
+    background-color: #252526;
+    visibility: hidden;
+    padding: 20px;
+    box-shadow: 1px 1px 6px 2px #0000005e;
+    border-radius: 5px;
 }
 
 #container {
+    margin: 20px;
     display: flex;
     flex-wrap: wrap;
     row-gap: 20px;
     column-gap: 20px;
+}
+
+#rect-color {
+    width: 60px;
+    height: 60px;
+}
+
+canvas {
+  box-shadow: 1px 1px 6px 2px #0000005e
 }

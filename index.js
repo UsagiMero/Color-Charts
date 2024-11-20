@@ -1,7 +1,7 @@
 
 
 const cell = {w: 34, h: 26};
-const step = 1;
+const step = 10;
 const colors = [
     { color: "aliceblue", hex: "#f0f8ff"},
     { color: "antiquewhite", hex: "#faebd7"},
@@ -151,16 +151,17 @@ const colors = [
     { color: "yellow", hex: "#ffff00"},
     { color: "yellowgreen", hex: "#9acd32"},
 ];
-
+const tables = {};
 
 let loaded = () => {
-    create_charts();
+    create_tables();
     load_colors();
+    console.log(tables);
 }
 
-let create_charts = () => {
+let create_tables = () => {
     for (let h = 0; h < 360; h += step) {
-        create_chart(h);
+        create_table(h);
     }
 }
 
@@ -240,53 +241,118 @@ function rgb2hsl(r, g, b) {
     return {h, s, l};
 }
 
-let create_chart = (h) => {
-    let chart = document.createElement('canvas');
-    let ctx = chart.getContext('2d');
+let create_table = (h) => {
+    let canvas = document.createElement('canvas');
+    let ctx = canvas.getContext('2d');
     
-    let width = cell.w*5;
-    let height = cell.h*9;
+
+    let width = cell.w*6;
+    let height = cell.h*10;
 
     ctx.canvas.width = width;
     ctx.canvas.height = height;
-    chart.style.width = width+'px';
-    chart.style.height = height+'px';
+    canvas.style.width = width+'px';
+    canvas.style.height = height+'px';
 
-    chart.id = `h=${h}`;
+    canvas.id = `h=${h}`;
     
     x = 0;
     y = 0;
-    for (let l = 90; l > 0; l -= 10) {
-        for (let s = 100; s > 0; s -= 20) {
+    for (let l = 100; l > 0; l -= 10) {
+        for (let s = 100; s >= 0; s -= 20) {
+            if (l == 100) {
+                l = 95;
+            }
             let rgb = hsl2rgb(h, s/100, l/100);
             ctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
             ctx.fillRect(x, y, cell.w, cell.h);
-
             x += cell.w;
         }
         y += cell.h;
         x = 0;
-    }   
+    }
 
-    document.getElementById('container').appendChild(chart);
+    tables[h] = {table: canvas, rects: []};
+
+    canvas.onmousemove = (e) => {
+        let x = e.offsetX;
+        let y = e.offsetY;
+
+        let c = 0;
+        let tooltip = document.getElementById('tooltip');
+
+        // look through rects to find any colissions
+        for (let rect_data of tables[h].rects) {
+            
+            let rect = rect_data.rect;
+
+            if (!rect.contains(x, y)) {
+                continue;
+            }
+
+            let rootx = e.pageX - x;
+            let rooty = e.pageY - y; 
+
+            c++;
+            tooltip.style.visibility = 'visible';
+
+            tooltip.style.left = rootx + rect.x + rect_size.w + 10 + 'px';
+            tooltip.style.top = rooty + rect.y + 10 + 'px';
+
+            document.getElementById('rect-color').style.backgroundColor = rect_data.hex;
+            document.getElementById('rect-name').innerHTML = rect_data.name;
+            document.getElementById('rect-hex').innerHTML = rect_data.hex;
+        }
+
+        if (c == 0) {
+            tooltip.style.visibility = 'hidden';
+        }
+    }
+
+    document.getElementById('container').appendChild(canvas);
 }
 
-let place_color = (hsl, name, deviation, hex, table) => {
-    let chart = document.getElementById(`h=${table}`);
-    let ctx = chart.getContext('2d');
+let rect_hovered = (rect_data) => {
 
-    let width = cell.w*5;
-    let height = cell.h*9;
+}
+
+const rect_size = {w:20, h:20};
+
+let place_color = (hsl, name, deviation, hex, id) => {
+    let table = tables[id];
+    let canvas = tables[id].table;
+    let ctx = canvas.getContext('2d');
+
+    let width = cell.w*6;
+    let height = cell.h*10;
+    
+    let x = (1-hsl.s/100)*width;
+    let y = (1-hsl.l/100)*height;
 
     console.log(hsl);
 
-    let x = hsl.s/100*width;
-    let y = hsl.l/100*height;
+    let rect = {
+        x: x-rect_size.w/2,
+        y: y-rect_size.h/2, 
+        w: rect_size.w, 
+        h: rect_size.h,
+        
+        contains: (px, py) => {
+            return rect.x <= px && px <= rect.x + rect.w &&
+            rect.y <= py && py <= rect.y + rect.h;
+        }
+    }
 
+    ctx.fillStyle = hex;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    
     ctx.beginPath();
     ctx.strokeStyle = 'darkgrey';
-    ctx.rect(x-10, y-10, 20, 20);
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
     ctx.stroke();
+
+    let rect_data = {name, deviation, hsl, hex, id, rect};
+    table.rects.push(rect_data);
 }
 
 window.onload = loaded;
